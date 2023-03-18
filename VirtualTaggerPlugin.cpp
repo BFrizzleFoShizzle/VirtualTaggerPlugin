@@ -39,6 +39,12 @@ static void updateClassNames()
                 // TODO should this be realName?
                 QString funcName = ("vmt." + className + "." + method.name);
 
+                // add X-ref to vtable
+                auto classVTables = core->getAnalysisClassVTables(className);
+                if (classVTables.size() > 0)
+                    // TODO: this refs the VMT START, not the SLOT of the actual function
+                    rz_analysis_xrefs_set(core->core()->analysis, classVTables[0].addr, method.addr, RzAnalysisXRefType::RZ_ANALYSIS_XREF_TYPE_DATA);
+
                 // figure out the highest-level class that defines the function
                 for (auto baseClass : baseClasses)
                     for (auto parentMethod : core->getAnalysisClassMethods(baseClass.className))
@@ -53,7 +59,7 @@ static void updateClassNames()
 
                 //char* name = (char*)(new std::string(funcName.toStdString()))->c_str();
                 RzAnalysisFunction* funcDef = rz_analysis_create_function(core->core()->analysis, funcName.toStdString().c_str(), method.addr, RzAnalysisFcnType::RZ_ANALYSIS_FCN_TYPE_ANY);
-
+                
             skip:
                 ;
             }

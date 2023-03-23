@@ -197,10 +197,16 @@ static void runTagger(const SettingsMap &settings)
                     // which also messes up Cutter's interpretation after setting to data
                     if (clearStrings)
                     {
+                        // TODO we can probably do the whole vtable at once
+                        rz_meta_del(rizinCore->analysis, RZ_META_TYPE_STRING, vtableEntryAddr, pointerSize);
                         for (int j = 0; j < pointerSize; ++j)
                         {
                             size_t addr = vtableEntryAddr + j;
-                            core->removeString(addr);
+
+                            // early exit
+                            if (!rz_flag_exist_at(rizinCore->flags, "str.", 4, addr))
+                                continue;
+
                             // cleanup - clear string flags
                             QStringList flags = core->listFlagsAsStringAt(addr).split(",");;
                             for (auto flag : flags)
@@ -212,7 +218,7 @@ static void runTagger(const SettingsMap &settings)
                                     // HOWEVER, String defintions in Strings panel still seem to exist.
                                     // Unfortunately, hitting F5 in the strings panel after this freezes 
                                     // Cutter... searches work though?
-                                    core->delFlag(flag);
+                                    rz_flag_unset_name(rizinCore->flags, flag.toStdString().c_str());
                                     ++stringsRemoved;
                                 }
                             }
@@ -394,10 +400,10 @@ VirtualTaggerPluginWidget::VirtualTaggerPluginWidget(MainWindow* main) : CutterD
     layout->addWidget(text);
 
     addSetting(GENERATE_X_REFS_SETTING, "Generate X-Refs", layout, content);
-    addSetting(CLEAR_STRINGS_SETTING, "Clear strings (slow)", layout, content);
+    addSetting(CLEAR_STRINGS_SETTING, "Clear strings in vtables", layout, content);
     addSetting(SET_DATA_SETTING, "Set vtable entries to data", layout, content);
     addSetting(TAG_PURE_VIRTUALS_SETTING, "Tag pure virtuals", layout, content);
-    addSetting(ADD_NAME_COMMENT, "Add comment", layout, content);
+    addSetting(ADD_NAME_COMMENT, "Add function name comments", layout, content);
     QCheckBox* generateFunctionEntriesCheck = addSetting(GENERATE_FUNCTION_ENTRIES, "Generate function entries", layout, content);
     analyseAddedFunctionsCheck = addSetting(ANALYSE_ADDED_FUNCTIONS, "Analyse added functions", layout, content);
     recursiveAnalysisCheck = addSetting(RECURSIVE_ANALYSIS, "Recursive analyisis", layout, content);
@@ -454,7 +460,7 @@ void VirtualTaggerPlugin::setupInterface(MainWindow *main)
     if (!settings.contains(GENERATE_X_REFS_SETTING))
         settings.setValue(GENERATE_X_REFS_SETTING, true);
     if (!settings.contains(CLEAR_STRINGS_SETTING))
-        settings.setValue(CLEAR_STRINGS_SETTING, false);
+        settings.setValue(CLEAR_STRINGS_SETTING, true);
     if (!settings.contains(SET_DATA_SETTING))
         settings.setValue(SET_DATA_SETTING, true);
     if (!settings.contains(TAG_PURE_VIRTUALS_SETTING))

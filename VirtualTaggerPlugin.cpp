@@ -332,11 +332,12 @@ void VirtualTaggerPluginWidget::on_saveSettingsButtonClicked()
     }
 }
 
-QCheckBox* VirtualTaggerPluginWidget::addSetting(QString setting, QString label, QLayout* layout, QWidget* parent)
+QCheckBox* VirtualTaggerPluginWidget::addSetting(QString setting, QString label, QString tooltip, QLayout* layout, QWidget* parent)
 {
     QCheckBox* checkbox = new QCheckBox(label, parent);
     checkbox->setChecked(settings.value(setting));
     checkbox->setFont(Config()->getFont());
+    checkbox->setToolTip(tooltip);
     checkbox->setProperty("setting", setting);
     connect(checkbox, &QCheckBox::clicked, this, &VirtualTaggerPluginWidget::on_checkboxClicked);
     layout->addWidget(checkbox);
@@ -410,16 +411,27 @@ VirtualTaggerPluginWidget::VirtualTaggerPluginWidget(MainWindow* main) : CutterD
     text->setText("Virtual Tagger settings:");
     layout->addWidget(text);
 
-    addSetting(GENERATE_X_REFS_SETTING, "Generate X-Refs", layout, content);
-    addSetting(CLEAR_STRINGS_SETTING, "Clear strings in vtables", layout, content);
-    addSetting(SET_DATA_SETTING, "Set vtable entries to data", layout, content);
-    addSetting(TAG_PURE_VIRTUALS_SETTING, "Tag pure virtuals", layout, content);
-    addSetting(ADD_NAME_COMMENT, "Add function name comments", layout, content);
-    QCheckBox* generateFunctionEntriesCheck = addSetting(GENERATE_FUNCTION_ENTRIES, "Generate function entries", layout, content);
-    analyseAddedFunctionsCheck = addSetting(ANALYSE_ADDED_FUNCTIONS, "Analyse added functions", layout, content);
-    recursiveAnalysisCheck = addSetting(RECURSIVE_ANALYSIS, "Recursive analyisis", layout, content);
-    useAnalysisFunctionAddCheck = addSetting(USE_ANALYSIS_FUNCTION_ADD, "Use analysis_function_add (slow) (not commonly needed)", layout, content);
-    propagateNoreturnCheck = addSetting(PROPAGATE_NORETURN, "Propagate noreturn (slow) (not commonly needed)", layout, content);
+    addSetting(GENERATE_X_REFS_SETTING, "Generate X-Refs", "Generates X-Refs from vtable slot -> function", layout, content);
+    addSetting(CLEAR_STRINGS_SETTING, "Clear strings in vtables", "Removes string detections that occur inside vtable pointers", layout, content);
+    addSetting(SET_DATA_SETTING, "Set vtable entries to data", "Sets each vtable method entry to data so Cutter interprets it as a pointer", layout, content);
+    addSetting(TAG_PURE_VIRTUALS_SETTING, "Tag pure virtuals", "Runs the tagger on \"pure virtual\" functions (or any detected vtable offsets that don't have class method entries)", layout, content);
+    addSetting(ADD_NAME_COMMENT, "Add function name comments", "Adds a comment to each vtable entry with the name of the function it points to, making it easier to read X-Refs", layout, content);
+    QCheckBox* generateFunctionEntriesCheck = addSetting(GENERATE_FUNCTION_ENTRIES, "Generate function entries", "Generates function definitions so they show up in the functions panel", layout, content);
+    analyseAddedFunctionsCheck = addSetting(ANALYSE_ADDED_FUNCTIONS, "Analyse added functions", "Runs analysis on virtual functions."
+        "\nFunction analysis can be enabled + run after generating function entries, but can only be run ONCE."
+        "\nIf this is disabled, only the first instruction of a method will be associated with it's definition", layout, content);
+    recursiveAnalysisCheck = addSetting(RECURSIVE_ANALYSIS, "Recursive analyisis", "Enables recursive function analysis."
+        "\nMust be enabled before first Virtual Tagger analysis in order to work.", layout, content);
+    useAnalysisFunctionAddCheck = addSetting(USE_ANALYSIS_FUNCTION_ADD, "Use analysis_function_add (slow) (not commonly needed)"
+        , "Only enable this if you get weird results with it disabled."
+        "\nIf this is disabled, Virtual Tagger uses a custom faster analysis implementation that is *almost* equivalent to the internal function Cutter uses: rz_core_analysis_function_add"
+        "\nIf this is enabled, rz_core_analysis_function_add will be used (which can be multiple orders of magnitude slower - can take 10+ minutes to run for some binaries)"
+        "\nMust be enabled before first Virtual Tagger analysis in order to work.", layout, content);
+    propagateNoreturnCheck = addSetting(PROPAGATE_NORETURN, "Propagate noreturn (slow) (not commonly needed)", "if you don't know if you need this, you don't need it."
+        "\nEnables propagation of noreturn flags."
+        "\nThis usually increases analysis time by over 10x."
+        "\nanalysis_function_add always has this enabled."
+        "\nMust be enabled before first Virtual Tagger analysis in order to work.", layout, content);
 
     QPushButton* saveButton = new QPushButton(content);
     saveButton->setText("Save settings");

@@ -35,7 +35,7 @@ public:
     explicit VirtualTaggerPluginWidget(MainWindow* main);
 
 private:
-    QCheckBox* addSetting(QString setting, QString label, QLayout* layout, QWidget* parent);
+    QCheckBox* addSetting(QString setting, QString label, QString tooltip, QLayout* layout, QWidget* parent);
     QCheckBox* analyseAddedFunctionsCheck;
     QCheckBox* recursiveAnalysisCheck;
     QCheckBox* useAnalysisFunctionAddCheck;

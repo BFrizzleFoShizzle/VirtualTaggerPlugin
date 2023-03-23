@@ -276,12 +276,23 @@ static void runTagger(const SettingsMap &settings)
                         }
                         else
                         {
-
                             //char* name = (char*)(new std::string(funcName.toStdString()))->c_str();
                             RzAnalysisFunction* funcDef = rz_analysis_create_function(rizinCore->analysis, funcName.toStdString().c_str(), method.addr, RzAnalysisFcnType::RZ_ANALYSIS_FCN_TYPE_ANY);
                         }
                         skip:
                         ;
+                    }
+                    // if we've already made a definition, but it hasn't been analysed, and analysis is enabled, trigger analysis
+                    else if (analyseAddedFunctions && core->functionAt(method.addr)->ninstr == 0)
+                    {
+                        // backup name
+                        std::string funcName = core->functionAt(method.addr)->name;
+                        // recreate
+                        rz_analysis_function_delete(core->functionAt(method.addr));
+                        if (useAnalysisFunctionAdd)
+                            rz_core_analysis_function_add(rizinCore, funcName.c_str(), method.addr, recursiveAnalysis);
+                        else
+                            RzAnalysisFunctionAddNoUpdate(rizinCore, funcName.c_str(), method.addr, propagateNoreturn, recursiveAnalysis);
                     }
                 }
             }
